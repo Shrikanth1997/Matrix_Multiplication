@@ -2,32 +2,44 @@
 #include<omp.h>
 #include<sys/time.h>
 
-#define M 5
+#define M 512
 #define N 1
 
 using namespace std;
 
-int a[M][M], b[M][N], c[M][N];
+int a[M][M], b[M][N], c[M][N] ,sum;
 
 int main(){
 	int i,j,k;
 	struct timeval tv1, tv2;
+
+	srand(time(0));
 
 	for(i=0;i<M;i++)
 		for(j=0;j<M;j++)
 			a[i][j] = rand()%M;
 
 	for(i=0;i<M;i++)
-		b[i][N] = rand()%M;
+		for(j=0;j<N;j++)
+			b[i][j] = rand()%M;
+	
+	for(i=0;i<M;i++)
+                for(j=0;j<N;j++)
+                        c[i][j] = 0;
 
-	cout<<omp_get_num_procs()<<endl;
+
+
+	cout<<"Processes: "<<omp_get_num_procs()<<endl;
 	gettimeofday(&tv1,NULL);
-	#pragma omp parallel for private(i,j,k) shared(a,b,c)
+	#pragma omp parallel private(i,j,k) shared(a,b,c) reduction(+:sum)
 	for(i=0;i<M;i++){
 		for(j=0;j<N;j++){
-			c[i][j] = 0;
-			for(k=0;k<N;k++){
-				c[i][j] += a[i][k] * b[k][j];
+			//c[i][j] = 0;
+			sum = 0;
+			for(k=0;k<M;k++){
+				//c[i][j] += a[i][k] * b[k][j];
+				sum += a[i][k] * b[k][j];
+				c[i][j] = sum;
 			}
 		}
 	}
@@ -35,8 +47,8 @@ int main(){
 	gettimeofday(&tv2,NULL);
 
 	double timetaken = (double) (tv2.tv_sec-tv1.tv_sec) + (double) (tv2.tv_usec-tv1.tv_usec) * 1.e-6;
-	cout<<timetaken<<endl;
-
+	cout<<"Time: "<<timetaken<<endl;
+/*
 	for(i=0;i<M;i++){
                 for(j=0;j<M;j++)
                         cout<<a[i][j]<<" ";
@@ -56,6 +68,6 @@ int main(){
                         cout<<c[i][j]<<" ";
                 cout<<endl;
         }
-
+*/
 	return 0;
 }
